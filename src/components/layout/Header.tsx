@@ -4,6 +4,7 @@ import {
   Check,
   ChevronDown,
   GraduationCap,
+  Menu,
   Moon,
   Plus,
   Settings,
@@ -11,13 +12,9 @@ import {
   Sun,
 } from 'lucide-react'
 import type { ApiKeysState, ProviderId } from '../../types/ai'
-import type { StudyLevel, StudyMode, StudySubject } from '../../types/study'
+import type { StudyLevel, StudySubject } from '../../types/study'
 import { getProviderConfig, getAllProviders } from '../../services/ai/models'
-import {
-  LEVELS_DATA,
-  STUDY_MODES_DATA,
-  SUBJECTS_DATA,
-} from '../../services/prompts'
+import { LEVELS_DATA, SUBJECTS_DATA } from '../../services/prompts'
 
 interface HeaderProps {
   activeProvider: ProviderId
@@ -28,13 +25,13 @@ interface HeaderProps {
   onChangeSubject: (s: StudySubject) => void
   activeLevel: StudyLevel
   onChangeLevel: (l: StudyLevel) => void
-  activeMode: StudyMode
-  onChangeMode: (m: StudyMode) => void
   keys: ApiKeysState
   onOpenSettings: () => void
   onOpenFlashcards: () => void
   darkMode: boolean
   onToggleDarkMode: () => void
+  onToggleSidebar: () => void
+  hasMissingKey: boolean
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -46,13 +43,13 @@ export const Header: React.FC<HeaderProps> = ({
   onChangeSubject,
   activeLevel,
   onChangeLevel,
-  activeMode,
-  onChangeMode,
   keys,
   onOpenSettings,
   onOpenFlashcards,
   darkMode,
   onToggleDarkMode,
+  onToggleSidebar,
+  hasMissingKey,
 }) => {
   const [showModelMenu, setShowModelMenu] = useState(false)
   const [showSubjectMenu, setShowSubjectMenu] = useState(false)
@@ -90,6 +87,15 @@ export const Header: React.FC<HeaderProps> = ({
     <header className="app-header">
       {/* Brand & Tagline */}
       <div className="header-left">
+        <button
+          type="button"
+          onClick={onToggleSidebar}
+          className="btn-hamburger"
+          title="Afficher/masquer le menu"
+        >
+          <Menu size={19} />
+        </button>
+
         <div className="logo-brand">
           <div className="logo-icon-bg">
             <GraduationCap size={22} className="text-white" />
@@ -156,25 +162,6 @@ export const Header: React.FC<HeaderProps> = ({
               ))}
             </div>
           )}
-        </div>
-
-        {/* Study Mode Quick Bar */}
-        <div className="mode-quick-pills">
-          {(['socratique', 'simple', 'quiz', 'synthese'] as StudyMode[]).map((m) => {
-            const mInfo = STUDY_MODES_DATA[m]
-            const isSelected = activeMode === m
-            return (
-              <button
-                key={m}
-                type="button"
-                onClick={() => onChangeMode(m)}
-                className={`mode-quick-pill ${isSelected ? 'active' : ''}`}
-                title={mInfo.description}
-              >
-                {mInfo.label}
-              </button>
-            )
-          })}
         </div>
       </div>
 
@@ -339,6 +326,7 @@ export const Header: React.FC<HeaderProps> = ({
           title="Paramètres des clés d'API"
         >
           <Settings size={18} />
+          {hasMissingKey && <span className="icon-dot-badge" />}
         </button>
       </div>
     </header>

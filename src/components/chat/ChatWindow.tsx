@@ -30,6 +30,8 @@ interface ChatWindowProps {
   onOpenSettings: () => void
   onQuickPrompt: (text: string) => void
   onSaveToFlashcards: (question: string, answer: string) => void
+  onEditMessage: (id: string, newContent: string) => void
+  onRegenerate: () => void
 }
 
 export const ChatWindow: React.FC<ChatWindowProps> = ({
@@ -45,6 +47,8 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
   onOpenSettings,
   onQuickPrompt,
   onSaveToFlashcards,
+  onEditMessage,
+  onRegenerate,
 }) => {
   const scrollEndRef = useRef<HTMLDivElement>(null)
 
@@ -67,8 +71,8 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
             <GraduationCap size={44} className="text-indigo-400" />
           </div>
 
-          <div className="inline-flex items-center gap-2 px-3 py-1 mb-3 rounded-full text-xs font-semibold bg-indigo-500/10 text-indigo-300 border border-indigo-500/20">
-            <Sparkles size={13} className="text-indigo-400" />
+          <div className="hero-eyebrow">
+            <Sparkles size={13} />
             <span>Académie d'Étude Intelligente • Révisions Personnalisées</span>
           </div>
 
@@ -168,13 +172,21 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
         </div>
       ) : (
         <div className="messages-stream-list">
-          {messages.map((msg) => (
-            <MessageItem
-              key={msg.id}
-              message={msg}
-              onSaveToFlashcards={onSaveToFlashcards}
-            />
-          ))}
+          {messages.map((msg, idx) => {
+            const isLastAssistant =
+              !isStreaming && msg.role === 'assistant' && idx === messages.length - 1
+            return (
+              <MessageItem
+                key={msg.id}
+                message={msg}
+                onSaveToFlashcards={onSaveToFlashcards}
+                onEditMessage={msg.role === 'user' ? onEditMessage : undefined}
+                onRegenerate={isLastAssistant ? onRegenerate : undefined}
+                isLastAssistant={isLastAssistant}
+                disableActions={isStreaming}
+              />
+            )
+          })}
 
           {/* Active streaming message */}
           {isStreaming && (

@@ -49,4 +49,12 @@ export interface Flashcard {
   answer: string
   tags?: string[]
   createdAt: number
+  /** Spaced-repetition scheduling state (SM-2 lite). All optional for backward compatibility. */
+  easeFactor?: number
+  intervalDays?: number
+  repetitions?: number
+  dueAt?: number
+  lastReviewedAt?: number
 }
+
+export type SrsRating = 'again' | 'hard' | 'good' | 'easy'

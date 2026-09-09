@@ -83,6 +83,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
       {/* Main input card */}
       <form onSubmit={handleSubmit} className="chat-input-box">
         <textarea
+          id="chat-textarea-main"
           ref={textareaRef}
           value={text}
           onChange={(e) => setText(e.target.value)}
@@ -116,6 +117,12 @@ export const ChatInput: React.FC<ChatInputProps> = ({
           )}
         </div>
       </form>
+
+      <div className="input-hint-row">
+        <span className="input-hint-text">
+          <kbd>Entrée</kbd> envoyer · <kbd>Maj+Entrée</kbd> nouvelle ligne · <kbd>/</kbd> pour écrire depuis n'importe où
+        </span>
+      </div>
     </div>
   )
 }
