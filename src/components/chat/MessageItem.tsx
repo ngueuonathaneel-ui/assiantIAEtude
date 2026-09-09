@@ -4,6 +4,8 @@ import {
   Bot,
   Check,
   Copy,
+  Pencil,
+  RefreshCw,
   Sparkles,
   User,
 } from 'lucide-react'
@@ -14,14 +16,24 @@ import { getProviderConfig } from '../../services/ai/models'
 interface MessageItemProps {
   message: ChatMessage
   onSaveToFlashcards?: (question: string, answer: string) => void
+  onEditMessage?: (id: string, newContent: string) => void
+  onRegenerate?: () => void
+  isLastAssistant?: boolean
+  disableActions?: boolean
 }
 
 export const MessageItem: React.FC<MessageItemProps> = ({
   message,
   onSaveToFlashcards,
+  onEditMessage,
+  onRegenerate,
+  isLastAssistant,
+  disableActions,
 }) => {
   const [copied, setCopied] = useState(false)
   const [savedFlashcard, setSavedFlashcard] = useState(false)
+  const [isEditing, setIsEditing] = useState(false)
+  const [editText, setEditText] = useState(message.content)
 
   const isUser = message.role === 'user'
   const providerConfig = message.provider ? getProviderConfig(message.provider) : null
@@ -43,16 +55,24 @@ export const MessageItem: React.FC<MessageItemProps> = ({
     }
   }
 
+  const startEdit = () => {
+    setEditText(message.content)
+    setIsEditing(true)
+  }
+
+  const commitEdit = () => {
+    if (onEditMessage && editText.trim() && editText.trim() !== message.content) {
+      onEditMessage(message.id, editText.trim())
+    }
+    setIsEditing(false)
+  }
+
   return (
     <div className={`message-row ${isUser ? 'user-row' : 'assistant-row'}`}>
       <div className="message-container">
         {/* Avatar */}
         <div className={`message-avatar ${isUser ? 'user-avatar' : 'bot-avatar'}`}>
-          {isUser ? (
-            <User size={18} />
-          ) : (
-            <Bot size={18} />
-          )}
+          {isUser ? <User size={18} /> : <Bot size={18} />}
         </div>
 
         {/* Bubble */}
@@ -83,13 +103,54 @@ export const MessageItem: React.FC<MessageItemProps> = ({
           {/* Body */}
           <div className="message-body">
             {isUser ? (
-              <p className="user-text-content">{message.content}</p>
+              isEditing ? (
+                <>
+                  <textarea
+                    autoFocus
+                    className="message-edit-textarea"
+                    value={editText}
+                    onChange={(e) => setEditText(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault()
+                        commitEdit()
+                      }
+                      if (e.key === 'Escape') setIsEditing(false)
+                    }}
+                  />
+                  <div className="message-edit-actions">
+                    <button type="button" className="btn-edit-cancel" onClick={() => setIsEditing(false)}>
+                      Annuler
+                    </button>
+                    <button type="button" className="btn-edit-save" onClick={commitEdit}>
+                      Envoyer
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <p className="user-text-content">{message.content}</p>
+              )
             ) : (
               <MarkdownRenderer content={message.content} />
             )}
           </div>
 
-          {/* Action buttons footer for AI message */}
+          {/* Action buttons footer */}
+          {isUser && onEditMessage && !isEditing && (
+            <div className="message-actions-bar">
+              <button
+                type="button"
+                onClick={startEdit}
+                disabled={disableActions}
+                className="btn-msg-action"
+                title="Modifier ce message et régénérer la réponse"
+              >
+                <Pencil size={13} />
+                <span>Modifier</span>
+              </button>
+            </div>
+          )}
+
           {!isUser && (
             <div className="message-actions-bar">
               <button
@@ -129,6 +190,19 @@ export const MessageItem: React.FC<MessageItemProps> = ({
                       <span>Créer une Flashcard</span>
                     </>
                   )}
+                </button>
+              )}
+
+              {isLastAssistant && onRegenerate && (
+                <button
+                  type="button"
+                  onClick={onRegenerate}
+                  disabled={disableActions}
+                  className="btn-msg-action"
+                  title="Régénérer cette réponse"
+                >
+                  <RefreshCw size={13} />
+                  <span>Régénérer</span>
                 </button>
               )}
             </div>

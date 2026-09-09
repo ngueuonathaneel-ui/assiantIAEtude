@@ -22,7 +22,7 @@ export const DEFAULT_PREFERENCES: UserPreferences = {
   activeSubject: 'maths',
   activeLevel: 'lycee',
   activeMode: 'socratique',
-  darkMode: false,
+  darkMode: true,
 }
 
 export function loadApiKeys(): ApiKeysState {
@@ -124,5 +124,71 @@ export function saveFlashcards(cards: Flashcard[]): void {
     localStorage.setItem(FLASHCARDS_STORAGE_KEY, JSON.stringify(cards))
   } catch (e) {
     console.error('Erreur sauvegarde flashcards:', e)
+  }
+}
+
+export interface StudyBackup {
+  version: 1
+  exportedAt: number
+  sessions: ChatSession[]
+  flashcards: Flashcard[]
+  preferences: UserPreferences
+}
+
+/** Builds a full backup of study data. API keys are intentionally excluded for safety. */
+export function buildBackup(): StudyBackup {
+  return {
+    version: 1,
+    exportedAt: Date.now(),
+    sessions: loadChatSessions(),
+    flashcards: loadFlashcards(),
+    preferences: loadUserPreferences(),
+  }
+}
+
+export function downloadBackup(): void {
+  const backup = buildBackup()
+  const blob = new Blob([JSON.stringify(backup, null, 2)], {
+    type: 'application/json',
+  })
+  const url = URL.createObjectURL(blob)
+  const link = document.createElement('a')
+  const date = new Date().toISOString().slice(0, 10)
+  link.href = url
+  link.download = `studyai-sauvegarde-${date}.json`
+  document.body.appendChild(link)
+  link.click()
+  link.remove()
+  URL.revokeObjectURL(url)
+}
+
+export function parseBackupFile(raw: string): StudyBackup {
+  const parsed = JSON.parse(raw) as Partial<StudyBackup>
+  if (!parsed || typeof parsed !== 'object' || !Array.isArray(parsed.sessions)) {
+    throw new Error('Fichier de sauvegarde invalide ou corrompu.')
+  }
+  return {
+    version: 1,
+    exportedAt: typeof parsed.exportedAt === 'number' ? parsed.exportedAt : Date.now(),
+    sessions: parsed.sessions ?? [],
+    flashcards: Array.isArray(parsed.flashcards) ? parsed.flashcards : [],
+    preferences: { ...DEFAULT_PREFERENCES, ...parsed.preferences },
+  }
+}
+
+export function restoreBackup(backup: StudyBackup): void {
+  saveChatSessions(backup.sessions)
+  saveFlashcards(backup.flashcards)
+  saveUserPreferences(backup.preferences)
+}
+
+/** Wipes all locally stored study data (sessions, flashcards, prefs). API keys are kept. */
+export function clearStudyData(): void {
+  try {
+    localStorage.removeItem(SESSIONS_STORAGE_KEY)
+    localStorage.removeItem(CURRENT_SESSION_KEY)
+    localStorage.removeItem(FLASHCARDS_STORAGE_KEY)
+  } catch (e) {
+    console.error('Erreur lors de la suppression des données:', e)
   }
 }
